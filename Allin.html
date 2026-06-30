@@ -1,0 +1,925 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Allin — Minecraft Server</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=VT323&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#16110d;
+    --paper:#f6f1e7;
+    --paper-2:#ece4d2;
+    --rule:#2b211a;
+    --hot:#ff7a1a;          /* orange */
+    --gold:#ffb627;         /* yellow */
+    --rose:#ff5d8f;         /* pink */
+    --plum:#7a2e57;
+    --accent-grad: linear-gradient(180deg,#ffd24a 0%, #ff9a2e 45%, #ff5d8f 100%);
+    --accent-grad-h: linear-gradient(90deg,#ffd24a 0%, #ff9a2e 45%, #ff5d8f 100%);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--paper);color:var(--ink);font-family:'Space Grotesk',sans-serif;-webkit-font-smoothing:antialiased}
+  body{overflow-x:hidden}
+  img{display:block;max-width:100%}
+  a{color:inherit;text-decoration:none}
+  ::selection{background:var(--ink);color:var(--gold)}
+
+  /* —— Pixel grain so it never feels too "clean AI gradient" —— */
+  .grain::before{
+    content:"";position:absolute;inset:0;pointer-events:none;mix-blend-mode:multiply;opacity:.14;
+    background-image:
+      radial-gradient(rgba(0,0,0,.6) 1px, transparent 1.2px),
+      radial-gradient(rgba(0,0,0,.4) 1px, transparent 1.2px);
+    background-size: 3px 3px, 7px 7px;
+    background-position: 0 0, 1px 2px;
+  }
+
+  /* ——— NAV ——— */
+  nav.top{
+    position:fixed;top:0;left:0;right:0;z-index:50;
+    display:flex;align-items:center;justify-content:space-between;
+    padding:18px 28px;
+    mix-blend-mode:difference;color:#f6f1e7;
+  }
+  nav .wm{font-family:'VT323',monospace;font-size:22px;letter-spacing:.06em}
+  nav ul{display:flex;gap:28px;list-style:none;font-size:13px;letter-spacing:.14em;text-transform:uppercase}
+  nav ul a{position:relative}
+  nav ul a::after{content:"";position:absolute;left:0;right:0;bottom:-4px;height:1px;background:currentColor;transform:scaleX(0);transform-origin:left;transition:transform .25s}
+  nav ul a:hover::after{transform:scaleX(1)}
+  nav .ip{font-family:'VT323',monospace;font-size:18px;padding:6px 12px;border:1px solid currentColor}
+
+  /* ——— HERO ——— */
+  .hero{
+    position:relative;min-height:100vh;overflow:hidden;
+    display:flex;flex-direction:column;
+    /* full-bleed sunset gradient, top → bottom */
+    background: linear-gradient(180deg,
+      #ffeac2 0%,
+      #ffd680 20%,
+      #ffb24a 45%,
+      #ff8b3a 65%,
+      #ff6d6f 82%,
+      #ff5d8f 100%);
+  }
+  .hero .wash{
+    position:absolute;inset:0;
+    background:
+      radial-gradient(120% 70% at 50% 120%, rgba(122,46,87,.45) 0%, rgba(122,46,87,0) 60%),
+      radial-gradient(80% 50% at 90% 0%, rgba(255,255,255,.35) 0%, rgba(255,255,255,0) 60%);
+    pointer-events:none;
+  }
+  .hero .sky{
+    position:absolute;inset:0;
+    background-image:url('assets/cherry.jpg');
+    background-size:cover;background-position:center 40%;
+    opacity:.18;mix-blend-mode:multiply;
+    pointer-events:none;
+  }
+  /* pixel grain over the whole hero */
+  .hero::after{
+    content:"";position:absolute;inset:0;pointer-events:none;
+    mix-blend-mode:multiply;opacity:.10;
+    background-image:
+      radial-gradient(rgba(0,0,0,.6) 1px, transparent 1.2px),
+      radial-gradient(rgba(0,0,0,.4) 1px, transparent 1.2px);
+    background-size: 3px 3px, 7px 7px;
+    background-position: 0 0, 1px 2px;
+  }
+  /* hero is a 12-col grid, cleanly aligned */
+  .hero-inner{
+    position:relative;z-index:2;
+    flex:1;display:grid;
+    grid-template-columns:repeat(12,1fr);
+    grid-template-rows:1fr auto;
+    column-gap:24px;row-gap:0;
+    padding:110px 40px 0;align-items:start;
+  }
+  .hero .eyebrow-h{
+    grid-column:1/8;align-self:start;
+    font-family:'VT323',monospace;font-size:18px;letter-spacing:.18em;
+    color:#2b1810;display:flex;align-items:center;gap:14px;
+  }
+  .hero .eyebrow-h .season{
+    display:inline-flex;align-items:center;gap:8px;
+    padding:4px 10px;background:var(--ink);color:var(--gold);
+    font-size:15px;letter-spacing:.14em;
+  }
+  .hero .eyebrow-h .season::before{
+    content:"";width:8px;height:8px;background:var(--gold);
+    animation:blink 1.4s steps(2) infinite;
+  }
+  .hero h1{
+    grid-column:1/8;align-self:end;
+    font-family:'Instrument Serif',serif;font-weight:400;
+    font-size: clamp(72px, 11vw, 180px);line-height:.88;letter-spacing:-.025em;
+    color:#1a0a0a;margin-top:30px;
+    padding-bottom:10px;
+    text-shadow:0 1px 0 rgba(255,255,255,.15);
+  }
+  .hero h1 em{font-style:italic;color:#5a1538}
+  .hero .logo-wrap{
+    grid-column:8/13;grid-row:1/3;
+    display:flex;align-items:center;justify-content:center;
+    padding-bottom:40px;padding-right:20px;
+  }
+  .hero .logo-wrap img{
+    width:min(380px,100%);
+    filter: drop-shadow(0 12px 24px rgba(122,46,87,.25));
+    animation: bob 6s ease-in-out infinite;
+  }
+  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+
+  /* hero bottom info row — clean 3-column band */
+  .hero-foot{
+    position:relative;z-index:2;
+    border-top:1px solid rgba(26,10,10,.45);
+    margin:60px 40px 0;
+    display:grid;grid-template-columns: 1.2fr 1fr 1fr;gap:40px;
+    padding:22px 0 90px;  /* extra bottom space so FAB never overlaps */
+    font-size:14px;
+  }
+  .hero-foot .col .k{font-family:'VT323',monospace;font-size:16px;letter-spacing:.12em;color:#4a1f24;margin-bottom:8px}
+  .hero-foot .col .v{font-size:15px;line-height:1.5;color:#2b1010;max-width:380px}
+  .hero-foot .badges{display:flex;gap:6px;flex-wrap:wrap}
+  .badge{
+    font-family:'VT323',monospace;font-size:15px;letter-spacing:.05em;
+    padding:2px 9px;border:1px solid #1a0a0a;background:rgba(255,255,255,.18);color:#1a0a0a;
+  }
+  .badge.fill{background:#1a0a0a;color:var(--gold);border-color:#1a0a0a}
+
+  .marquee{
+    position:relative;z-index:3;border-top:1px solid var(--ink);border-bottom:1px solid var(--ink);
+    background:var(--ink);color:var(--paper);overflow:hidden;
+  }
+  .marquee-track{display:flex;gap:48px;padding:14px 0;white-space:nowrap;
+    animation:scroll 30s linear infinite;font-family:'VT323',monospace;font-size:22px;letter-spacing:.1em}
+  .marquee-track span{display:inline-flex;align-items:center;gap:48px}
+  .marquee-track span::after{content:"◆";color:var(--gold)}
+  @keyframes scroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+  /* ——— SECTION GENERIC ——— */
+  section{position:relative}
+  .container{padding:80px 40px;max-width:1480px;margin:0 auto}
+  .eyebrow{
+    display:flex;align-items:center;gap:14px;
+    font-family:'VT323',monospace;font-size:20px;letter-spacing:.1em;
+    text-transform:uppercase;color:#5a4738;margin-bottom:24px;
+  }
+  .eyebrow .num{
+    display:inline-flex;align-items:center;justify-content:center;
+    width:32px;height:32px;border:1px solid var(--ink);background:var(--paper-2);
+    font-size:16px;
+  }
+  .eyebrow .line{flex:1;height:1px;background:var(--ink);opacity:.4}
+  h2.display{
+    font-family:'Instrument Serif',serif;font-weight:400;
+    font-size:clamp(48px,7.5vw,128px);line-height:.92;letter-spacing:-.015em;
+  }
+  h2.display em{font-style:italic;color:#7a2e57}
+  /* keep each <br>-delimited line on one row, never re-wrap mid-line */
+  h2.display .ln{display:inline-block;white-space:nowrap}
+  .hero h1 .ln{display:inline-block;white-space:nowrap}
+  .join h2 .ln{display:inline-block;white-space:nowrap}
+
+  /* ——— ABOUT ——— */
+  .about{background:var(--paper)}
+  .about-grid{display:grid;grid-template-columns:1.05fr 1fr;gap:80px;align-items:end}
+  .about p.lead{font-size:22px;line-height:1.45;max-width:560px;margin-top:30px}
+  .about .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:0;border-top:1px solid var(--ink);margin-top:50px}
+  .about .stat{padding:24px 0;border-right:1px solid rgba(22,17,13,.2)}
+  .about .stat:last-child{border-right:none}
+  .about .stat .n{font-family:'Instrument Serif',serif;font-size:64px;line-height:1}
+  .about .stat .l{font-family:'VT323',monospace;font-size:18px;letter-spacing:.08em;color:#5a4738;margin-top:6px}
+  .about .visual{position:relative;aspect-ratio:4/5;border:1px solid var(--ink);overflow:hidden}
+  .about .visual img{width:100%;height:100%;object-fit:cover;object-position:center}
+  .about .visual .tag-tl{position:absolute;top:14px;left:14px;font-family:'VT323',monospace;background:var(--paper);padding:4px 10px;font-size:16px;border:1px solid var(--ink)}
+  .about .visual .tag-br{position:absolute;bottom:14px;right:14px;font-family:'VT323',monospace;background:var(--ink);color:var(--gold);padding:4px 10px;font-size:16px}
+
+  /* ——— PVP ——— */
+  .pvp{background:var(--ink);color:var(--paper);overflow:hidden}
+  .pvp .eyebrow{color:#c9b89a}
+  .pvp .eyebrow .num{background:transparent;border-color:var(--paper);color:var(--paper)}
+  .pvp .eyebrow .line{background:var(--paper)}
+  .pvp h2.display{color:var(--paper)}
+  .pvp h2.display em{
+    background:var(--accent-grad-h);
+    -webkit-background-clip:text;background-clip:text;color:transparent;font-style:italic;
+  }
+  .pvp .intro{display:grid;grid-template-columns:1.4fr 1fr;gap:60px;align-items:end;margin-top:30px}
+  .pvp .intro p{font-size:18px;line-height:1.55;color:#d9cdb6;max-width:480px}
+  .pvp .mode-grid{
+    display:grid;grid-template-columns:repeat(4,1fr);gap:0;
+    border-top:1px solid #3a2c22;margin-top:70px;
+  }
+  .pvp .mode{
+    padding:30px 24px 28px;border-right:1px solid #3a2c22;position:relative;min-height:280px;
+    display:flex;flex-direction:column;justify-content:space-between;
+    transition:background .3s;
+  }
+  .pvp .mode:last-child{border-right:none}
+  .pvp .mode:hover{background:#1f1812}
+  .pvp .mode .idx{font-family:'VT323',monospace;font-size:16px;color:#8a7560;letter-spacing:.1em}
+  .pvp .mode h3{
+    font-family:'Instrument Serif',serif;font-weight:400;font-size:38px;line-height:1;
+    margin-top:auto;margin-bottom:14px;
+  }
+  .pvp .mode p{font-size:13px;line-height:1.5;color:#b8a98e}
+  .pvp .mode .status{
+    margin-top:14px;font-family:'VT323',monospace;font-size:15px;letter-spacing:.08em;
+    display:inline-flex;align-items:center;gap:8px;
+  }
+  .pvp .mode .status::before{content:"";width:8px;height:8px;background:var(--gold);display:inline-block;animation:blink 1.4s steps(2) infinite}
+  @keyframes blink{50%{opacity:.2}}
+  .pvp .mode.live h3{
+    background:var(--accent-grad-h);-webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+
+  .nether-strip{
+    position:relative;height:280px;margin-top:80px;border:1px solid #3a2c22;overflow:hidden;
+  }
+  .nether-strip img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:saturate(1.1)}
+  .nether-strip .caption{
+    position:absolute;left:24px;bottom:18px;font-family:'VT323',monospace;font-size:20px;
+    color:var(--gold);text-shadow:0 1px 0 #000;letter-spacing:.1em;
+  }
+  .nether-strip .caption .dot{display:inline-block;width:8px;height:8px;background:var(--rose);margin-right:8px;vertical-align:middle}
+
+  /* ——— SURVIVAL / DUNGEONS ——— */
+  .surv{background:var(--paper);position:relative}
+  .surv .header-row{display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:end}
+  .surv .header-row .right{padding-bottom:14px}
+  .surv .header-row p{font-size:18px;line-height:1.55;max-width:440px;color:#3a2c22}
+  .surv .cmd-row{display:flex;flex-wrap:wrap;gap:12px;margin-top:24px}
+  .surv .command{
+    display:inline-flex;align-items:center;gap:12px;
+    padding:12px 20px;background:var(--ink);color:var(--gold);
+    font-family:'VT323',monospace;font-size:22px;letter-spacing:.06em;
+  }
+  .surv .command .blink{display:inline-block;width:10px;height:16px;background:var(--gold);animation:blink 1s steps(2) infinite}
+  .surv .command .cmd-note{font-size:14px;color:#c9b89a;letter-spacing:.06em}
+
+  .dungeon-scroll{margin-top:60px;position:relative}
+  .dungeon-rail{
+    display:flex;gap:20px;overflow-x:auto;padding:10px 40px 30px;margin:0 -40px;
+    scroll-snap-type:x mandatory;scrollbar-width:thin;
+  }
+  .dungeon-rail::-webkit-scrollbar{height:8px}
+  .dungeon-rail::-webkit-scrollbar-track{background:transparent}
+  .dungeon-rail::-webkit-scrollbar-thumb{background:var(--ink)}
+  .d-card{
+    flex:0 0 380px;scroll-snap-align:start;position:relative;
+    aspect-ratio:3/4;border:1px solid var(--ink);overflow:hidden;
+    transition:transform .4s ease;
+  }
+  .d-card:hover{transform:translateY(-6px)}
+  .d-card img{width:100%;height:100%;object-fit:cover;transition:transform .8s ease}
+  .d-card:hover img{transform:scale(1.06)}
+  .d-card .meta{
+    position:absolute;left:0;right:0;bottom:0;padding:18px 18px 16px;
+    background:linear-gradient(180deg,transparent 0%, rgba(0,0,0,.85) 80%);
+    color:var(--paper);
+  }
+  .d-card .meta .row{display:flex;justify-content:space-between;font-family:'VT323',monospace;font-size:16px;letter-spacing:.08em;color:#ffd24a}
+  .d-card .meta h4{font-family:'Instrument Serif',serif;font-weight:400;font-size:34px;line-height:1;margin-top:6px}
+  .d-card .meta .sub{font-size:12px;color:#d9cdb6;margin-top:6px;letter-spacing:.04em}
+  .d-card .tier{
+    position:absolute;top:14px;left:14px;font-family:'VT323',monospace;font-size:14px;
+    padding:3px 8px;background:var(--paper);border:1px solid var(--ink);letter-spacing:.08em;
+  }
+  .d-card .tier.boss{background:var(--ink);color:var(--gold);border-color:var(--ink)}
+
+  .scroll-hint{
+    display:flex;justify-content:space-between;align-items:center;
+    margin-top:14px;font-family:'VT323',monospace;font-size:16px;color:#5a4738;letter-spacing:.1em;
+  }
+  .scroll-hint .arrow{display:inline-flex;gap:4px;align-items:center}
+
+  /* Loot row */
+  .loot{
+    margin-top:90px;display:grid;grid-template-columns:1fr 1fr 1fr;
+    gap:0;border-top:1px solid var(--ink);
+  }
+  .loot .item{padding:30px 0 24px;border-right:1px solid rgba(22,17,13,.2);padding-right:30px}
+  .loot .item:last-child{border-right:none;padding-right:0}
+  .loot .item .icon{
+    width:56px;height:56px;display:flex;align-items:center;justify-content:center;
+    background:var(--ink);color:var(--gold);font-family:'VT323',monospace;font-size:28px;
+    margin-bottom:18px;
+  }
+  .loot .item h5{font-family:'Instrument Serif',serif;font-weight:400;font-size:30px;line-height:1.05}
+  .loot .item p{font-size:14px;line-height:1.55;color:#3a2c22;margin-top:10px;max-width:320px}
+  .loot .item .rarity{font-family:'VT323',monospace;font-size:14px;letter-spacing:.1em;margin-top:14px}
+  .loot .item .rarity.r1{color:var(--hot)}
+  .loot .item .rarity.r2{color:var(--rose)}
+  .loot .item .rarity.r3{color:#7a2e57}
+
+  /* ——— JOIN / CTA ——— */
+  .join{
+    position:relative;overflow:hidden;color:var(--ink);
+    background: linear-gradient(180deg,#ffd24a 0%, #ff9a2e 50%, #ff5d8f 100%);
+  }
+  .join::before{
+    content:"";position:absolute;inset:0;background-image:url('assets/fireworks.jpg');
+    background-size:cover;background-position:center;
+    opacity:.18;mix-blend-mode:multiply;
+  }
+  .join .container{position:relative;text-align:center;padding-top:120px;padding-bottom:60px}
+  .join h2{font-family:'Instrument Serif',serif;font-weight:400;
+    font-size:clamp(72px,12vw,180px);line-height:.9;letter-spacing:-.015em;color:#1a120c}
+  .join h2 em{font-style:italic}
+  .join .ip-box{
+    margin:46px auto 0;display:inline-flex;align-items:stretch;border:1px solid var(--ink);background:var(--paper);
+  }
+  .join .ip-box .label{
+    padding:14px 20px;font-family:'VT323',monospace;font-size:18px;letter-spacing:.1em;
+    background:var(--ink);color:var(--gold);display:flex;align-items:center;
+  }
+  .join .ip-box .addr{
+    padding:14px 26px;font-family:'VT323',monospace;font-size:28px;letter-spacing:.06em;display:flex;align-items:center;
+  }
+  .join .ip-box .copy{
+    padding:0 20px;border-left:1px solid var(--ink);display:flex;align-items:center;cursor:pointer;
+    font-family:'VT323',monospace;font-size:18px;letter-spacing:.1em;transition:background .2s;
+  }
+  .join .ip-box .copy:hover{background:var(--ink);color:var(--gold)}
+  .join .meta{margin-top:18px;font-family:'VT323',monospace;font-size:16px;letter-spacing:.1em;color:#3a2c22}
+
+  /* footer */
+  footer{background:var(--ink);color:#c9b89a;padding:40px;
+    display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:20px;
+    font-family:'VT323',monospace;font-size:18px;letter-spacing:.05em}
+  footer .links{display:flex;gap:24px}
+  footer .links a:hover{color:var(--gold)}
+
+  /* ——— COMMAND PANEL (floating + modal) ——— */
+  .cmd-fab{
+    position:fixed;right:20px;bottom:20px;z-index:60;
+    display:inline-flex;align-items:center;gap:10px;
+    padding:14px 20px;background:var(--ink);color:var(--gold);
+    border:1px solid var(--ink);cursor:pointer;
+    font-family:'VT323',monospace;font-size:20px;letter-spacing:.08em;
+    box-shadow:0 14px 30px rgba(0,0,0,.25);
+    transition:transform .2s ease, background .2s;
+  }
+  .cmd-fab:hover{transform:translateY(-2px);background:#241a13}
+  .cmd-fab .dot{width:8px;height:8px;background:var(--gold);
+    animation:blink 1.4s steps(2) infinite}
+  .cmd-fab kbd{
+    font-family:'VT323',monospace;font-size:14px;
+    padding:1px 6px;border:1px solid var(--gold);color:var(--gold);
+    margin-left:4px;letter-spacing:.05em;opacity:.8;
+  }
+
+  .cmd-overlay{
+    position:fixed;inset:0;z-index:70;
+    background:rgba(15,10,6,.72);
+    backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+    display:none;align-items:center;justify-content:center;padding:24px;
+    opacity:0;transition:opacity .25s;
+  }
+  .cmd-overlay.open{display:flex;opacity:1}
+  .cmd-modal{
+    width:min(880px,100%);max-height:88vh;overflow:hidden;
+    background:var(--paper);border:1px solid var(--ink);
+    display:flex;flex-direction:column;
+    transform:translateY(10px);transition:transform .3s ease;
+    box-shadow:0 30px 80px rgba(0,0,0,.5);
+  }
+  .cmd-overlay.open .cmd-modal{transform:translateY(0)}
+  .cmd-modal header{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:18px 24px;border-bottom:1px solid var(--ink);
+    background:var(--ink);color:var(--paper);
+  }
+  .cmd-modal header .ttl{
+    font-family:'Instrument Serif',serif;font-size:30px;line-height:1;
+  }
+  .cmd-modal header .ttl em{font-style:italic;
+    background:var(--accent-grad-h);-webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .cmd-modal header .sub{
+    font-family:'VT323',monospace;font-size:14px;letter-spacing:.12em;color:#c9b89a;
+    margin-top:4px;
+  }
+  .cmd-modal header .close{
+    width:36px;height:36px;display:flex;align-items:center;justify-content:center;
+    border:1px solid var(--paper);color:var(--paper);background:transparent;cursor:pointer;
+    font-family:'VT323',monospace;font-size:20px;line-height:1;
+    transition:background .2s;
+  }
+  .cmd-modal header .close:hover{background:var(--paper);color:var(--ink)}
+
+  .cmd-body{padding:8px 24px 24px;overflow-y:auto}
+  .cmd-group{padding:20px 0;border-bottom:1px dashed rgba(22,17,13,.25)}
+  .cmd-group:last-child{border-bottom:none}
+  .cmd-group .ghead{
+    display:flex;align-items:baseline;gap:14px;margin-bottom:14px;
+  }
+  .cmd-group .ghead .gnum{
+    font-family:'VT323',monospace;font-size:14px;letter-spacing:.1em;
+    color:var(--paper);background:var(--ink);padding:2px 8px;
+  }
+  .cmd-group .ghead h4{
+    font-family:'Instrument Serif',serif;font-weight:400;font-size:26px;line-height:1;
+  }
+  .cmd-group .ghead .tag{
+    margin-left:auto;font-family:'VT323',monospace;font-size:13px;letter-spacing:.1em;
+    color:#5a4738;
+  }
+  .cmd-list{display:grid;gap:8px}
+  .cmd-row-item{
+    display:grid;grid-template-columns:200px 1fr;gap:18px;align-items:baseline;
+    padding:8px 0;border-bottom:1px solid rgba(22,17,13,.08);
+  }
+  .cmd-row-item:last-child{border-bottom:none}
+  .cmd-row-item code{
+    font-family:'VT323',monospace;font-size:20px;letter-spacing:.05em;
+    color:var(--ink);background:var(--paper-2);
+    padding:3px 10px;border:1px solid rgba(22,17,13,.2);
+    justify-self:start;
+  }
+  .cmd-row-item .desc{font-size:14px;line-height:1.5;color:#2b211a}
+  .cmd-row-item .desc b{font-weight:600}
+
+  .cmd-modal footer{
+    padding:14px 24px;border-top:1px solid var(--ink);
+    background:var(--paper-2);
+    display:flex;justify-content:space-between;align-items:center;
+    font-family:'VT323',monospace;font-size:14px;letter-spacing:.1em;color:#5a4738;
+  }
+
+  /* responsive trims */
+  @media (max-width:980px){
+    .hero-inner{grid-template-columns:1fr;padding-top:100px}
+    .hero .logo-wrap{justify-content:flex-start}
+    .about-grid{grid-template-columns:1fr;gap:40px}
+    .pvp .intro{grid-template-columns:1fr;gap:24px}
+    .pvp .mode-grid{grid-template-columns:repeat(2,1fr)}
+    .pvp .mode:nth-child(2n){border-right:none}
+    .pvp .mode:nth-child(-n+2){border-bottom:1px solid #3a2c22}
+    .surv .header-row{grid-template-columns:1fr}
+    .loot{grid-template-columns:1fr;gap:0}
+    .loot .item{border-right:none;border-bottom:1px solid rgba(22,17,13,.2);padding-right:0}
+    .loot .item:last-child{border-bottom:none}
+    .d-card{flex:0 0 78vw}
+    nav ul{display:none}
+  }
+</style>
+</head>
+<body>
+
+<nav class="top">
+  <div class="wm">ALLIN ◆ MC SERVER · 2026</div>
+  <ul>
+    <li><a href="#about">About</a></li>
+    <li><a href="#pvp">PVP</a></li>
+    <li><a href="#dungeons">Dungeons</a></li>
+    <li><a href="#join">Join</a></li>
+  </ul>
+  <div class="ip">110.67.56.168:25565</div>
+</nav>
+
+<!-- ════════ HERO ════════ -->
+<section class="hero">
+  <div class="wash"></div>
+  <div class="sky"></div>
+
+  <div class="hero-inner">
+    <div class="eyebrow-h">
+      <span class="season">SEASON 01</span>
+      <span>A NEW MINECRAFT SERVER · 2026</span>
+    </div>
+    <h1><span class="ln">Play it</span><br><span class="ln"><em>all in.</em></span></h1>
+    <div class="logo-wrap">
+      <img src="assets/logo.png" alt="Allin logo">
+    </div>
+  </div>
+
+  <div class="hero-foot">
+    <div class="col">
+      <div class="k">▌ TAGLINE</div>
+      <div class="v">PVPもサバイバルも、全部入り。<br>ひとつのサーバーで、ふたつの遊びを行き来する。</div>
+    </div>
+    <div class="col">
+      <div class="k">▌ MODES</div>
+      <div class="badges">
+        <span class="badge fill">PVP</span>
+        <span class="badge">SURVIVAL</span>
+        <span class="badge">DUNGEONS</span>
+      </div>
+    </div>
+    <div class="col">
+      <div class="k">▌ EDITION</div>
+      <div class="v">Java Edition 1.21+ &nbsp;·&nbsp; Free to play<br><span style="font-family:'VT323',monospace;font-size:16px;color:#4a1f24">110.67.56.168:25565</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- marquee -->
+<div class="marquee">
+  <div class="marquee-track">
+    <span>BED FIGHT</span><span>FIREBALL FIGHT</span><span>BEDWARS</span><span>WALL RUN</span>
+    <span>ADVENTURER'S GUILD</span><span>DUNGEONS</span><span>RARE WEAPONS</span><span>SURVIVAL</span>
+    <span>BED FIGHT</span><span>FIREBALL FIGHT</span><span>BEDWARS</span><span>WALL RUN</span>
+    <span>ADVENTURER'S GUILD</span><span>DUNGEONS</span><span>RARE WEAPONS</span><span>SURVIVAL</span>
+  </div>
+</div>
+
+<!-- ════════ ABOUT ════════ -->
+<section class="about" id="about">
+  <div class="container">
+    <div class="eyebrow">
+      <span class="num">01</span>
+      <span>About the server</span>
+      <span class="line"></span>
+      <span>JP / 2026</span>
+    </div>
+
+    <div class="about-grid">
+      <div>
+        <h2 class="display">
+          <span class="ln">ふたつの遊びを、</span><br>
+          <span class="ln"><em>ひとつの世界</em>に。</span>
+        </h2>
+        <p class="lead">
+          AllinはPVPとサバイバルが同居する、いま日本でいちばん欲張りなMinecraftサーバー。
+          競技性の高いミニゲームと、深く潜るダンジョン探索を、同じアカウントで行き来できる。
+        </p>
+
+        <div class="stats">
+          <div class="stat"><div class="n">2</div><div class="l">GAME MODES</div></div>
+          <div class="stat"><div class="n">12+</div><div class="l">DUNGEONS</div></div>
+          <div class="stat"><div class="n">∞</div><div class="l">PLAY STYLES</div></div>
+        </div>
+      </div>
+
+      <div class="visual">
+        <div class="tag-tl">FIG. A — ADVENTURER'S GUILD</div>
+        <img src="assets/cherry.jpg" alt="Adventurer's Guild">
+        <div class="tag-br">/ag</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════ PVP ════════ -->
+<section class="pvp" id="pvp">
+  <div class="container">
+    <div class="eyebrow">
+      <span class="num">02</span>
+      <span>PVP / Competitive</span>
+      <span class="line"></span>
+      <span>IN DEVELOPMENT</span>
+    </div>
+
+    <h2 class="display">
+      <span class="ln">撃って、走って、</span><br>
+      <span class="ln"><em>奪い合え。</em></span>
+    </h2>
+
+    <div class="intro">
+      <p>
+        定番のBedwarsから、Allin独自のWallRunまで。
+        反射神経と戦略が試される競技モードを順次実装中。最初のシーズンに向けて、開発チームが本気で作り込んでいる。
+      </p>
+      <div style="font-family:'VT323',monospace;font-size:16px;color:#8a7560;text-align:right;letter-spacing:.1em">
+        DEV LOG ▌ v0.4.2<br>
+        BUILD &nbsp; ▌ 2026.06.28
+      </div>
+    </div>
+
+    <div class="mode-grid">
+      <div class="mode live">
+        <div class="idx">▌ M-01</div>
+        <div>
+          <h3>Bed<br>Fight</h3>
+          <p>ベッドを守りながら相手の拠点を崩す、Allinの主力モード。チーム戦で映える。</p>
+          <div class="status">CLOSED BETA</div>
+        </div>
+      </div>
+      <div class="mode">
+        <div class="idx">▌ M-02</div>
+        <div>
+          <h3>Fireball<br>Fight</h3>
+          <p>火球とノックバックの読み合い。短期決戦の代名詞。リスポーン制で何度でも。</p>
+          <div class="status">DEVELOPING</div>
+        </div>
+      </div>
+      <div class="mode">
+        <div class="idx">▌ M-03</div>
+        <div>
+          <h3>Bed<br>wars</h3>
+          <p>クラシックなBedwarsをAllinチューン。ジェネレータ、装備、マップを全面リワーク。</p>
+          <div class="status">DEVELOPING</div>
+        </div>
+      </div>
+      <div class="mode">
+        <div class="idx">▌ M-04</div>
+        <div>
+          <h3>Wall<br>Run</h3>
+          <p>パルクール × 競争。壁走り、フック、ダッシュで誰よりも速くゴールへ。</p>
+          <div class="status">CONCEPT</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="nether-strip">
+      <img src="assets/nether.jpg" alt="">
+      <div class="caption"><span class="dot"></span>NETHER ARENA · COMING NEXT SEASON</div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════ SURVIVAL / DUNGEONS ════════ -->
+<section class="surv" id="dungeons">
+  <div class="container">
+    <div class="eyebrow">
+      <span class="num">03</span>
+      <span>Survival / Dungeons</span>
+      <span class="line"></span>
+      <span>MAIN CONTENT</span>
+    </div>
+
+    <div class="header-row">
+      <div>
+        <h2 class="display">
+          <span class="ln">ダンジョンが、</span><br>
+          <span class="ln"><em>すべての中心。</em></span>
+        </h2>
+      </div>
+      <div class="right">
+        <p>
+          サバイバルの主役はダンジョン。<b>/ag</b>でアドベンチャラーズギルドに飛び、
+          各地のダンジョンへワープ。レベル付きの強敵ボスを倒して、
+          専用エンチャント付きの<b>エリート装備</b>を持ち帰る。
+        </p>
+        <div class="cmd-row">
+          <div class="command">
+            <span>/ag</span>
+            <span class="blink"></span>
+            <span class="cmd-note">→ adventurer's guild</span>
+          </div>
+          <div class="command">
+            <span>/shop</span>
+            <span class="blink"></span>
+            <span class="cmd-note">→ open shop</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- horizontal dungeon rail -->
+  <div class="container" style="padding-top:0">
+    <div class="dungeon-scroll">
+      <div class="dungeon-rail" id="rail">
+
+        <div class="d-card">
+          <span class="tier">FIELD</span>
+          <img src="assets/cherry.jpg" alt="Open world bosses">
+          <div class="meta">
+            <div class="row"><span>FIELD-01</span><span>Lv. 1 — 10</span></div>
+            <h4>Elite Field Bosses</h4>
+            <div class="sub">世界各地に出現するレベル付きの強敵。倒せばエリート装備の入口。</div>
+          </div>
+        </div>
+
+        <div class="d-card">
+          <span class="tier">DUNGEON</span>
+          <img src="assets/oasis.jpg" alt="Dungeon">
+          <div class="meta">
+            <div class="row"><span>D-01</span><span>Lv. 5 — 20</span></div>
+            <h4>Entry Dungeon</h4>
+            <div class="sub">最初に挑む地下構造。装備を整えて、ボス部屋を目指す。</div>
+          </div>
+        </div>
+
+        <div class="d-card">
+          <span class="tier">DUNGEON</span>
+          <img src="assets/desert.jpg" alt="Dungeon">
+          <div class="meta">
+            <div class="row"><span>D-02</span><span>Lv. 15 — 30</span></div>
+            <h4>Mid-Tier Dungeon</h4>
+            <div class="sub">複数のフロアとミニボス。パーティ推奨。</div>
+          </div>
+        </div>
+
+        <div class="d-card">
+          <span class="tier boss">BOSS</span>
+          <img src="assets/nether.jpg" alt="Boss arena">
+          <div class="meta">
+            <div class="row"><span>D-03</span><span>Lv. 30+</span></div>
+            <h4>Boss Arena</h4>
+            <div class="sub">レベル帯ごとに用意された専用ボス戦。固有スキル持ち。</div>
+          </div>
+        </div>
+
+        <div class="d-card">
+          <span class="tier">DUNGEON</span>
+          <img src="assets/knight.jpg" alt="High level dungeon">
+          <div class="meta">
+            <div class="row"><span>D-04</span><span>Lv. 40+</span></div>
+            <h4>High-Level Dungeon</h4>
+            <div class="sub">高難度。エリート装備を揃えてから挑むエンドコンテンツ。</div>
+          </div>
+        </div>
+
+        <div class="d-card">
+          <span class="tier">EVENT</span>
+          <img src="assets/fireworks.jpg" alt="Event">
+          <div class="meta">
+            <div class="row"><span>EVT</span><span>期間限定</span></div>
+            <h4>Special Events</h4>
+            <div class="sub">不定期に開催される特別イベント。限定報酬あり。</div>
+          </div>
+        </div>
+
+      </div>
+      <div class="scroll-hint">
+        <span>▌ DUNGEONS &amp; ARENAS · DRAG TO EXPLORE</span>
+        <span class="arrow">← &nbsp; SCROLL &nbsp; →</span>
+      </div>
+    </div>
+
+    <!-- LOOT -->
+    <div class="loot">
+      <div class="item">
+        <div class="icon">†</div>
+        <h5>Elite Equipment</h5>
+        <p>ボスからドロップする<b>専用エンチャント付き装備</b>。通常のエンチャント体系とは別物。</p>
+        <div class="rarity r1">▌ BOSS DROP ONLY</div>
+      </div>
+      <div class="item">
+        <div class="icon">✦</div>
+        <h5>Guild &amp; Quests</h5>
+        <p><b>/ag</b>のクエストNPCから依頼を受注。攻略して報酬を受け取る、本格RPG型の進行。</p>
+        <div class="rarity r2">▌ QUEST-BASED PROGRESS</div>
+      </div>
+      <div class="item">
+        <div class="icon">⌬</div>
+        <h5>Shop &amp; Economy</h5>
+        <p><b>/shop</b>でアイテム売買。倒した素材を換金、必要な装備や消耗品を仕入れる。</p>
+        <div class="rarity r3">▌ /shop</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════ JOIN ════════ -->
+<section class="join grain" id="join">
+  <div class="container">
+    <div style="font-family:'VT323',monospace;font-size:22px;letter-spacing:.15em;color:#3a2c22;margin-bottom:18px">
+      ▌ 04 / JOIN THE SERVER
+    </div>
+    <h2>
+      <span class="ln">Go <em>all in.</em></span>
+    </h2>
+    <div class="ip-box">
+      <div class="label">SERVER IP</div>
+      <div class="addr" id="addr">110.67.56.168:25565</div>
+      <div class="copy" id="copyBtn">[ COPY ]</div>
+    </div>
+    <div class="meta">JAVA EDITION 1.21+ &nbsp;·&nbsp; OPEN 24 / 7 &nbsp;·&nbsp; FREE TO PLAY</div>
+  </div>
+</section>
+
+<!-- ════════ COMMAND PANEL ════════ -->
+<button class="cmd-fab" id="cmdFab" aria-label="コマンド一覧を開く">
+  <span class="dot"></span>
+  COMMANDS
+  <kbd>/</kbd>
+</button>
+
+<div class="cmd-overlay" id="cmdOverlay" aria-hidden="true">
+  <div class="cmd-modal" role="dialog" aria-modal="true" aria-labelledby="cmdTitle">
+    <header>
+      <div>
+        <div class="ttl" id="cmdTitle">Command <em>list.</em></div>
+        <div class="sub">▌ ALLIN SERVER · IN-GAME COMMANDS</div>
+      </div>
+      <button class="close" id="cmdClose" aria-label="閉じる">✕</button>
+    </header>
+
+    <div class="cmd-body">
+
+      <div class="cmd-group">
+        <div class="ghead">
+          <span class="gnum">01</span>
+          <h4>Adventure</h4>
+          <span class="tag">▌ DUNGEONS &amp; BOSSES</span>
+        </div>
+        <div class="cmd-list">
+          <div class="cmd-row-item">
+            <code>/ag</code>
+            <div class="desc"><b>アドベンチャラーズギルド</b>を開く。ダンジョン入口・クエスト受注・テレポートのハブ。</div>
+          </div>
+          <div class="cmd-row-item">
+            <code>/em</code>
+            <div class="desc">アドベンチャーメニュー。ボス情報、装備、進行状況などをまとめて確認。</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="cmd-group">
+        <div class="ghead">
+          <span class="gnum">02</span>
+          <h4>Essentials</h4>
+          <span class="tag">▌ PLAYER UTILITY</span>
+        </div>
+        <div class="cmd-list">
+          <div class="cmd-row-item">
+            <code>/tpa &lt;player&gt;</code>
+            <div class="desc">指定したプレイヤーへ<b>テレポート申請</b>を送る。</div>
+          </div>
+          <div class="cmd-row-item">
+            <code>/tpaccept</code>
+            <div class="desc">届いたテレポート申請を承認する。</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="cmd-group">
+        <div class="ghead">
+          <span class="gnum">03</span>
+          <h4>Economy &amp; Warps</h4>
+          <span class="tag">▌ SHOP · TRAVEL</span>
+        </div>
+        <div class="cmd-list">
+          <div class="cmd-row-item">
+            <code>/shop</code>
+            <div class="desc">ショップを開く。アイテムの売買はここから。</div>
+          </div>
+          <div class="cmd-row-item">
+            <code>/warp shop</code>
+            <div class="desc">ショップエリアへワープ。</div>
+          </div>
+          <div class="cmd-row-item">
+            <code>/warp allin</code>
+            <div class="desc"><b>初期スポーン地点</b>へ戻る。迷ったときの帰還用。</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <footer>
+      <span>▌ TYPE IN-GAME CHAT</span>
+      <span>PRESS <span style="color:var(--ink)">ESC</span> OR <span style="color:var(--ink)">/</span> TO CLOSE</span>
+    </footer>
+  </div>
+</div>
+
+<footer>
+  <div>© 2026 ALLIN. MADE WITH ❤ IN JAPAN.</div>
+  <div class="links">
+    <a href="#">Discord</a>
+    <a href="#">X / Twitter</a>
+    <a href="#">YouTube</a>
+    <a href="#">Rules</a>
+  </div>
+</footer>
+
+<script>
+  // copy IP
+  const btn=document.getElementById('copyBtn');
+  const addr=document.getElementById('addr');
+  btn?.addEventListener('click',async()=>{
+    try{await navigator.clipboard.writeText(addr.textContent.trim());
+      const o=btn.textContent;btn.textContent='[ COPIED ✓ ]';
+      btn.style.background='var(--ink)';btn.style.color='var(--gold)';
+      setTimeout(()=>{btn.textContent=o;btn.style.background='';btn.style.color='';},1600);
+    }catch(e){}
+  });
+  // smooth scroll
+  document.querySelectorAll('nav a[href^="#"]').forEach(a=>{
+    a.addEventListener('click',e=>{
+      const id=a.getAttribute('href');const el=document.querySelector(id);
+      if(el){e.preventDefault();window.scrollTo({top:el.offsetTop-20,behavior:'smooth'})}
+    });
+  });
+
+  // command modal
+  const fab = document.getElementById('cmdFab');
+  const overlay = document.getElementById('cmdOverlay');
+  const closeBtn = document.getElementById('cmdClose');
+  const openCmd = ()=>{overlay.classList.add('open');overlay.setAttribute('aria-hidden','false');document.body.style.overflow='hidden'};
+  const closeCmd = ()=>{overlay.classList.remove('open');overlay.setAttribute('aria-hidden','true');document.body.style.overflow=''};
+  fab?.addEventListener('click',openCmd);
+  closeBtn?.addEventListener('click',closeCmd);
+  overlay?.addEventListener('click',e=>{if(e.target===overlay)closeCmd()});
+  document.addEventListener('keydown',e=>{
+    const isOpen = overlay.classList.contains('open');
+    if(e.key==='Escape' && isOpen){closeCmd()}
+    if(e.key==='/' && !isOpen){
+      // don't hijack when user is typing in an input
+      const t=e.target;
+      if(t && (t.tagName==='INPUT' || t.tagName==='TEXTAREA' || t.isContentEditable)) return;
+      e.preventDefault();openCmd();
+    }
+  });
+</script>
+</body>
+</html>
